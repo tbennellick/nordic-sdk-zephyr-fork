@@ -270,15 +270,14 @@ static int wifi_connect(uint32_t mgmt_request, struct net_if *iface,
 	}
 	NET_DBG("ch %u sec %u", params->channel, params->security);
 
-	if ((params->security > WIFI_SECURITY_TYPE_MAX) ||
-	    (params->ssid_length > WIFI_SSID_MAX_LEN) ||
+	if ((params->ssid_length > WIFI_SSID_MAX_LEN) ||
 	    (params->ssid_length == 0U) ||
-	    ((params->security == WIFI_SECURITY_TYPE_PSK ||
-		  params->security == WIFI_SECURITY_TYPE_WPA_PSK ||
-		  params->security == WIFI_SECURITY_TYPE_PSK_SHA256) &&
+	    (((params->security & BIT(WIFI_SECURITY_TYPE_PSK)) ||
+		  (params->security & BIT(WIFI_SECURITY_TYPE_WPA_PSK)) ||
+		  (params->security & BIT(WIFI_SECURITY_TYPE_PSK_SHA256))) &&
 	     ((params->psk_length < 8) || (params->psk_length > 64) ||
 	      (params->psk_length == 0U) || !params->psk)) ||
-	    ((params->security == WIFI_SECURITY_TYPE_SAE) &&
+	    ((params->security & BIT(WIFI_SECURITY_TYPE_SAE)) &&
 	      ((params->psk_length == 0U) || !params->psk) &&
 		  ((params->sae_password_length == 0U) || !params->sae_password)) ||
 	    ((params->channel != WIFI_CHANNEL_ANY) &&

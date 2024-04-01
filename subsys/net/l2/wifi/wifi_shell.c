@@ -546,27 +546,38 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 		params->psk = argv[idx];
 		params->psk_length = strlen(argv[idx]);
 		/* Defaults */
-		params->security = WIFI_SECURITY_TYPE_PSK;
+		params->security = BIT(WIFI_SECURITY_TYPE_PSK);
 		params->mfp = WIFI_MFP_OPTIONAL;
 		idx++;
 
 		/* Security type (optional) */
 		if (idx < argc) {
-			unsigned int security = strtol(argv[idx], &endptr, 10);
+			char *security = (char *)os_zalloc(strlen(argv[idx]));
 
-			if (security <= WIFI_SECURITY_TYPE_MAX) {
-				params->security = security;
+			if (!security) {
+				PR_ERROR("Failed to allocate memory for security config\n");
+				return -ENOMEM;
 			}
+
+			strcpy(security, argv[idx]);
+
+			char *security_num = strtok(security, ",");
+
+			while (security_num) {
+				params->security |= BIT(atoi(security_num));
+				security_num = strtok(NULL, ",");
+			}
+
 			idx++;
 
 			/* MFP (optional) */
 			if (idx < argc) {
 				unsigned int mfp = strtol(argv[idx], &endptr, 10);
 
-				if (security == WIFI_SECURITY_TYPE_NONE ||
-				    security == WIFI_SECURITY_TYPE_WPA_PSK) {
+				if ((params->security & BIT(WIFI_SECURITY_TYPE_NONE)) ||
+				    (params->security & BIT(WIFI_SECURITY_TYPE_WPA_PSK))) {
 					PR_ERROR("MFP not supported for security type %s\n",
-						 wifi_security_txt(security));
+						 wifi_security_txt(params->security));
 					return -EINVAL;
 				}
 
@@ -1874,7 +1885,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		  "[channel number/band: > 0:Channel, 0:any channel,\n"
 		  "< 0:band (-2:2.4GHz, -5:5GHz, -6:6GHz]\n"
 		  "[PSK: valid only for secure SSIDs]\n"
-		  "[Security type: valid only for secure SSIDs]\n"
+		  "[Security type: valid only for secure SSIDs. User can provide multiple Security types by giving comma-separated string]\n"
+		  "eg., \"1,2,3\" for \"WPA2-PSK,WPA2-PSK-256,SAE\"\n"
 		  "0:None, 1:WPA2-PSK, 2:WPA2-PSK-256, 3:SAE, 4:WAPI, 5:EAP, 6:WEP, 7: WPA-PSK\n"
 		  "[MFP (optional: needs security type to be specified)]\n"
 		  ": 0:Disable, 1:Optional, 2:Required.\n",

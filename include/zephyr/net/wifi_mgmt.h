@@ -356,7 +356,7 @@ struct wifi_connect_req_params {
 	/** Channel */
 	uint8_t channel;
 	/** Security type */
-	enum wifi_security_type security;
+	uint32_t security;
 	/** MFP options */
 	enum wifi_mfp_options mfp;
 	/** Connect timeout in seconds, SYS_FOREVER_MS for no timeout */
